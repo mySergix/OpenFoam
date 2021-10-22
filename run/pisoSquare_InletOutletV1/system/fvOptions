@@ -1,0 +1,286 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2106                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvOptions;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+O2_Source
+{
+    type            scalarCodedSource;
+    selectionMode   cellZone;
+    cellZone        o2downflow_source;
+
+    fields          (O2);
+    name            O2source;
+    active          yes;
+
+    codeInclude
+    #{
+
+    #};
+
+    codeCorrect
+    #{
+        Pout<< "**codeCorrect**" << endl;
+    #};
+
+    codeAddSup
+    #{
+        //cellSet selectedCells(mesh_, cellSetName_);
+        //cells_ = selectedCells.toc();
+        scalarField& O2_ = eqn.source();
+
+		const Time& TiempoO2 = mesh().time();
+
+        // const labelList& cells = mesh().cells_;
+        // label zoneID = mesh().cellZones().findZoneID("o2downflow_source");
+        // const labelList& celdas = mesh().cellZones()[zoneID];
+
+	if(TiempoO2.value() > 0.0 && TiempoO2.value() < 3.0)
+	{
+		forAll(cells_, i)
+        {
+            O2_[cells_[i]] = (- 1.0)*(TiempoO2.value() / 3.0);
+        };
+	}
+	else if(TiempoO2.value() > 3.0 && TiempoO2.value() < 6.0)
+	{
+		forAll(cells_, i)
+        {
+            O2_[cells_[i]] = - 1.0;
+        };
+	}
+	else if(TiempoO2.value() > 6.0 && TiempoO2.value() < 9.0)
+	{
+		forAll(cells_, i)
+        {
+            O2_[cells_[i]] = (- 1.0) + (1.0 * ((TiempoO2.value() - 6.0) / 3.0));
+        };
+	}
+	else
+	{
+		forAll(cells_, i)
+        {
+            O2_[cells_[i]] = 0.0;
+        };
+	}
+        
+            
+    #};
+
+    codeSetValue
+    #{
+        Pout<< "**codeSetValue**" << endl;
+    #};
+
+    code
+    #{
+        $codeInclude
+        $codeCorrect
+        $codeAddSup
+        $codeSetValue
+    #};
+
+}
+
+H2_Source
+{
+    type            scalarCodedSource;
+    selectionMode   cellZone;
+    cellZone        h2downflow_source;
+
+    fields          (H2);
+    name            H2source;
+    active          yes;
+
+    codeInclude
+    #{
+
+    #};
+
+    codeCorrect
+    #{
+        Pout<< "**codeCorrect**" << endl;
+    #};
+
+    codeAddSup
+    #{
+        //cellSet selectedCells(mesh_, cellSetName_);
+        //cells_ = selectedCells.toc();
+        scalarField& H2_ = eqn.source();
+        // const labelList& cells = mesh().cells_;
+        // label zoneID = mesh().cellZones().findZoneID("o2downflow_source");
+        // const labelList& celdas = mesh().cellZones()[zoneID];
+
+		const Time& TiempoH2 = mesh().time();
+		const double Frequency = 10.0; // hz
+		const double Amplitude = 3.0;
+		const double pi = 3.14159;
+
+        forAll(cells_, i)
+        {
+            H2_[cells_[i]] = Amplitude * sin(2.0 * pi * Frequency * TiempoH2.value());
+        };
+            
+    #};
+
+    codeSetValue
+    #{
+        Pout<< "**codeSetValue**" << endl;
+    #};
+
+    code
+    #{
+        $codeInclude
+        $codeCorrect
+        $codeAddSup
+        $codeSetValue
+    #};
+        
+}
+
+/*
+velocitySource
+{
+    type            scalarCodedSource;
+    active          true;
+    selectionMode   cellSet;
+    cellSet         o2downflow_source;
+    name            velocitySource;
+    fields          (O2);
+    vectorCodedSourceCoeffs
+    {
+    fields          (O2);
+    selectionMode   cellSet;
+    cellSet         o2downflow_source;
+    name            velocitySource;
+
+        codeInclude
+        #{
+        #};
+
+        codeCorrect
+        #{
+        #};
+
+        codeAddSup
+        #{
+
+    const scalarField& V = mesh_.V();
+    const vectorField& C = mesh_.C();
+    scalar V_ = 0.0;
+    //forAll(C, i)
+    //{
+      //  V_ += V[i];
+    //}
+    reduce(V_, sumOp<scalar>());
+    Info<< indent
+    << "- selected " << returnReduce(C.size(), sumOp<label>())
+    << " cell(s) with volume " << V_ << endl;
+
+        #};
+
+        codeSetValue
+        #{
+
+        #};
+
+        codeCorrect
+        #{
+
+        #};
+
+        code
+        #{
+            $codeCorrect
+            $codeAddSup
+            $codeSetValue
+        #};
+
+        
+    }
+    
+
+    velocitySourceCoeffs
+    {
+    }
+}
+/*
+o2_source
+{
+    type            scalarCodedSource;
+
+    active          yes;
+    name            O2source;
+
+    scalarCodedSourceCoeffs
+    {
+        selectionMode   all;
+        //cellSet         o2downflow_source;
+
+        fields          (O2);
+        redirectType    sourceTime;
+
+        codeInclude
+        #{
+
+        #};
+
+        codeCorrect
+        #{
+            Pout<< "**codeCorrect**" << endl;
+        #};
+
+        codeAddSup
+        #{
+             const Time& time = mesh().time();
+            const scalarField& V = mesh_.V();
+            scalarField& o2_SOURCE = eqn.source();
+            o2_SOURCE -= 0.1*sqr(time.value())*V;
+
+          //  scalarField& o2_Source = eqn.source();
+
+         //   cellSet selectedCells(mesh_, cellSetName_);
+          //  O2cells_ = selectedCells.toc();
+
+            // Apply the source
+         //   forAll(O2cells_, i)
+          //  {
+                // cell volume specific source
+           //     o2_Source[i]= 5.0;
+           // };
+
+        #};
+
+        codeSetValue
+        #{
+            Pout<< "**codeSetValue**" << endl;
+        #};
+
+        // Dummy entry. Make dependent on above to trigger recompilation
+        code
+        #{
+            $codeInclude
+            $codeCorrect
+            $codeAddSup
+            $codeSetValue
+        #};
+    }
+
+    sourceTimeCoeffs
+    {
+        // Dummy entry
+    }
+}
+*/
+// **************************************************************** //
