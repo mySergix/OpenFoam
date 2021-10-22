@@ -1,0 +1,21 @@
+type            codedFixedValue;
+        value           uniform(1 0 0);
+        
+        name    parabolicVelocity;
+        code
+        #{
+                const vectorField& Cf = patch().Cf();
+                vectorField& field = *this;
+                
+                const scalar Ymax = 8.0;
+                const scalar Umax = 1.0;
+                
+                forAll(Cf, faceI)
+                {
+                    const scalar y = Cf[faceI][1];
+                    
+                    field[faceI] = vector(Umax*(1.0  - pow((y - 0.50*Ymax)/Ymax, 2.0)), 0, 0);
+                }
+                
+        
+        #};
